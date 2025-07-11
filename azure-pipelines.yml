@@ -24,7 +24,7 @@ pool:
 variables: 
   - name: KEYVAULT_URL
     value: ${{ parameters.keyVaultUrl }}
-  - group: terraform (nonprod)
+  - group: terraform (non-prod)
   
 steps:
   - checkout: self

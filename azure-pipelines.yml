@@ -54,16 +54,53 @@ steps:
   # Node.js and Playwright Setup
   - script: |
       npm ci
-      npx playwright install
-    displayName: 'Install Node.js dependencies and Playwright browsers'
+      npx playwright install chromium
+    displayName: 'Install Node.js dependencies and Playwright Chrome browser only'
 
-  # Run Playwright Tests
+  # Run Playwright Tests (Non-interactive)
   - script: |
-      if [ -n "${{ parameters.testTags }}" ]; then
-        npx playwright test --grep "${{ parameters.testTags }}"
-      elif [ -n "${{ parameters.testCategory }}" ]; then
-        npx playwright test --grep "@${{ parameters.testCategory }}"
+      if [ "${{ parameters.environment }}" = "prod" ]; then
+        if [ -n "${{ parameters.testTags }}" ]; then
+          npm run test:prod:ci -- --grep "${{ parameters.testTags }}"
+        elif [ -n "${{ parameters.testCategory }}" ]; then
+          npm run test:prod:ci -- --grep "@${{ parameters.testCategory }}"
+        else
+          npm run test:prod:ci
+        fi
       else
-        npx playwright test
+        if [ -n "${{ parameters.testTags }}" ]; then
+          npm run test:stage:ci -- --grep "${{ parameters.testTags }}"
+        elif [ -n "${{ parameters.testCategory }}" ]; then
+          npm run test:stage:ci -- --grep "@${{ parameters.testCategory }}"
+        else
+          npm run test:stage:ci
+        fi
       fi
-    displayName: 'Run Playwright tests'
+    displayName: 'Run Playwright tests (non-interactive)'
+
+  # Publish Test Results
+  - task: PublishTestResults@2
+    condition: succeededOrFailed()
+    inputs:
+      testRunner: JUnit
+      testResultsFiles: 'test-results/*.xml'
+      testRunTitle: 'Playwright Tests - ${{ parameters.environment }}'
+    displayName: 'Publish JUnit Test Results'
+
+  # Publish HTML Test Report
+  - task: PublishPipelineArtifact@1
+    condition: succeededOrFailed()
+    inputs:
+      targetPath: 'playwright-report'
+      artifact: 'playwright-report-${{ parameters.environment }}'
+      publishLocation: 'pipeline'
+    displayName: 'Publish HTML Test Report'
+
+  # Publish JSON Test Results
+  - task: PublishPipelineArtifact@1
+    condition: succeededOrFailed()
+    inputs:
+      targetPath: 'test-results'
+      artifact: 'test-results-${{ parameters.environment }}'
+      publishLocation: 'pipeline'
+    displayName: 'Publish JSON Test Results'

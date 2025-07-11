@@ -29,6 +29,7 @@ This framework provides automated testing capabilities for 6 operating companies
 - **TypeScript**: Type-safe development experience
 - **Modular Design**: Reusable components and utilities
 - **Parallel Execution**: Run tests across multiple opcos simultaneously
+- **Chrome Desktop Focus**: Optimized for Chrome desktop browser only
 
 ### 🏷️ Test Organization & Tagging
 - **E2E Tests**: UI component and flow testing with backend integration
@@ -97,6 +98,9 @@ eu-automated-tests/
 # Run all tests
 npm test
 
+# Run tests in non-interactive mode (recommended for CI)
+npm run test:ci
+
 # Run E2E tests only
 npm run test:e2e
 
@@ -117,6 +121,10 @@ npm run test:stage
 
 # Run tests on production environment
 npm run test:prod
+
+# Run tests in non-interactive mode for specific environments
+npm run test:stage:ci
+npm run test:prod:ci
 ```
 
 ### Advanced Test Execution
@@ -135,6 +143,19 @@ npm run test:ui
 
 # Debug tests
 npm run test:debug
+```
+
+### CI-Specific Commands
+
+For continuous integration environments, use these commands to avoid hanging:
+
+```bash
+# Non-interactive test execution (recommended for CI)
+npm run test:ci
+
+# Environment-specific non-interactive execution
+npm run test:stage:ci
+npm run test:prod:ci
 ```
 
 ### Parallel Execution Examples

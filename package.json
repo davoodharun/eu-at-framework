@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "playwright test",
+    "test:ci": "playwright test --reporter=html,json,junit",
     "test:e2e": "playwright test --grep @e2e",
     "test:integration": "playwright test --grep @integration",
     "test:login": "playwright test --grep @login",
@@ -12,6 +13,8 @@
     "test:payments": "playwright test --grep @payments",
     "test:stage": "playwright test --config=playwright.stage.config.ts",
     "test:prod": "playwright test --config=playwright.prod.config.ts",
+    "test:stage:ci": "playwright test --config=playwright.stage.config.ts --reporter=html,json,junit",
+    "test:prod:ci": "playwright test --config=playwright.prod.config.ts --reporter=html,json,junit",
     "test:debug": "playwright test --debug",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",

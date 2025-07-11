@@ -78,6 +78,13 @@ steps:
       fi
     displayName: 'Run Playwright tests (non-interactive)'
 
+  # Debug: List test-results directory contents
+  - script: |
+      echo "Listing test-results directory contents:"
+      ls -R test-results || echo "test-results directory not found"
+    displayName: 'List test-results directory contents'
+    condition: succeededOrFailed()
+
   # Publish Test Results
   - task: PublishTestResults@2
     condition: succeededOrFailed()

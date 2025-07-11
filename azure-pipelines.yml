@@ -87,15 +87,6 @@ steps:
       testRunTitle: 'Playwright Tests - ${{ parameters.environment }}'
     displayName: 'Publish JUnit Test Results'
 
-  # Publish HTML Test Report
-  - task: PublishPipelineArtifact@1
-    condition: succeededOrFailed()
-    inputs:
-      targetPath: 'playwright-report'
-      artifact: 'playwright-report-${{ parameters.environment }}'
-      publishLocation: 'pipeline'
-    displayName: 'Publish HTML Test Report'
-
   # Publish JSON Test Results
   - task: PublishPipelineArtifact@1
     condition: succeededOrFailed()

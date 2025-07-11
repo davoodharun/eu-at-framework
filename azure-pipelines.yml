@@ -40,41 +40,6 @@ steps:
   - checkout: self
 
   # Terraform Infrastructure Deployment
-  - ${{ if eq(parameters.deployInfrastructure, true) }}:
-    - task: TerraformInstaller@0
-      inputs:
-        terraformVersion: 'latest'
-      displayName: 'Install Terraform'
-
-    - task: TerraformTaskV4@4
-      inputs:
-        provider: 'azurerm'
-        command: 'init'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
-        backendServiceArm: 'Azure-Service-Connection'
-        backendAzureRmResourceGroupName: '${{ parameters.resourceGroupName }}'
-        backendAzureRmStorageAccountName: 'eutesttfstate'
-        backendAzureRmContainerName: 'tfstate'
-        backendAzureRmKey: 'eu-test-credentials.tfstate'
-      displayName: 'Terraform Init'
-
-    - task: TerraformTaskV4@4
-      inputs:
-        provider: 'azurerm'
-        command: 'plan'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
-        environmentServiceNameAzureRM: 'Azure-Service-Connection'
-        commandOptions: '-var="resource_group_name=${{ parameters.resourceGroupName }}" -var="key_vault_name=${{ parameters.keyVaultName }}" -var="environment=${{ parameters.environment }}"'
-      displayName: 'Terraform Plan'
-
-    - task: TerraformTaskV4@4
-      inputs:
-        provider: 'azurerm'
-        command: 'apply'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
-        environmentServiceNameAzureRM: 'Azure-Service-Connection'
-        commandOptions: '-var="resource_group_name=${{ parameters.resourceGroupName }}" -var="key_vault_name=${{ parameters.keyVaultName }}" -var="environment=${{ parameters.environment }}" -auto-approve'
-      displayName: 'Terraform Apply'
 
   # Python Setup
   - task: UsePythonVersion@0

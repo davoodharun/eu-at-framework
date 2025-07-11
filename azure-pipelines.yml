@@ -1,5 +1,8 @@
 trigger: none
 
+variables: 
+- group: terraform (nonprod)
+
 parameters:
   - name: testTags
     displayName: 'Test tags to run (e.g. @login,@e2e)'

@@ -1,0 +1,14 @@
+# Example terraform.tfvars file
+# Copy this to terraform.tfvars and update with your values
+
+# Required: Name of your existing resource group
+resource_group_name = "your-existing-resource-group-name"
+
+# Optional: Custom Key Vault name (default: eu-test-credentials-kv)
+key_vault_name = "eu-test-credentials-kv"
+
+# Optional: Environment name (default: dev)
+environment = "dev"
+
+# Optional: Location (will use resource group location if not specified)
+# location = "East US" 

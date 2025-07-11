@@ -1,0 +1,114 @@
+trigger: none
+
+parameters:
+  - name: testTags
+    displayName: 'Test tags to run (e.g. @login,@e2e)'
+    type: string
+    default: ''
+  - name: testCategory
+    displayName: 'Test category (e.g. login, outages, payments)'
+    type: string
+    default: ''
+  - name: keyVaultName
+    displayName: 'Azure Key Vault Name'
+    type: string
+    default: 'eu-test-credentials-stage-kv'
+  - name: keyVaultUrl
+    displayName: 'Azure Key Vault URL'
+    type: string
+    default: 'https://eu-test-credentials-stage-kv.vault.azure.net/'
+  - name: resourceGroupName
+    displayName: 'Resource Group Name'
+    type: string
+    default: 'eu-test-rg'
+  - name: environment
+    displayName: 'Environment (stage/prod)'
+    type: string
+    default: 'stage'
+  - name: deployInfrastructure
+    displayName: 'Deploy Infrastructure (Terraform)'
+    type: boolean
+    default: true
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  KEYVAULT_URL: ${{ parameters.keyVaultUrl }}
+
+steps:
+  - checkout: self
+
+  # Terraform Infrastructure Deployment
+  - ${{ if eq(parameters.deployInfrastructure, true) }}:
+    - task: TerraformInstaller@0
+      inputs:
+        terraformVersion: 'latest'
+      displayName: 'Install Terraform'
+
+    - task: TerraformTaskV4@4
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
+        backendServiceArm: 'Azure-Service-Connection'
+        backendAzureRmResourceGroupName: '${{ parameters.resourceGroupName }}'
+        backendAzureRmStorageAccountName: 'eutesttfstate'
+        backendAzureRmContainerName: 'tfstate'
+        backendAzureRmKey: 'eu-test-credentials.tfstate'
+      displayName: 'Terraform Init'
+
+    - task: TerraformTaskV4@4
+      inputs:
+        provider: 'azurerm'
+        command: 'plan'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
+        environmentServiceNameAzureRM: 'Azure-Service-Connection'
+        commandOptions: '-var="resource_group_name=${{ parameters.resourceGroupName }}" -var="key_vault_name=${{ parameters.keyVaultName }}" -var="environment=${{ parameters.environment }}"'
+      displayName: 'Terraform Plan'
+
+    - task: TerraformTaskV4@4
+      inputs:
+        provider: 'azurerm'
+        command: 'apply'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
+        environmentServiceNameAzureRM: 'Azure-Service-Connection'
+        commandOptions: '-var="resource_group_name=${{ parameters.resourceGroupName }}" -var="key_vault_name=${{ parameters.keyVaultName }}" -var="environment=${{ parameters.environment }}" -auto-approve'
+      displayName: 'Terraform Apply'
+
+  # Python Setup
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.10'
+
+  - script: |
+      python -m pip install --upgrade pip
+      pip install -r requirements.txt
+    displayName: 'Install Python dependencies'
+
+  # Download secrets from Key Vault and generate credentials.yml
+  - script: |
+      python scripts/keyvault_to_credentials.py
+    displayName: 'Download secrets from Key Vault and generate credentials.yml'
+    env:
+      AZURE_CLIENT_ID: $(AZURE_CLIENT_ID)
+      AZURE_TENANT_ID: $(AZURE_TENANT_ID)
+      AZURE_CLIENT_SECRET: $(AZURE_CLIENT_SECRET)
+      KEYVAULT_URL: $(KEYVAULT_URL)
+
+  # Node.js and Playwright Setup
+  - script: |
+      npm ci
+      npx playwright install
+    displayName: 'Install Node.js dependencies and Playwright browsers'
+
+  # Run Playwright Tests
+  - script: |
+      if [ -n "${{ parameters.testTags }}" ]; then
+        npx playwright test --grep "${{ parameters.testTags }}"
+      elif [ -n "${{ parameters.testCategory }}" ]; then
+        npx playwright test --grep "@${{ parameters.testCategory }}"
+      else
+        npx playwright test
+      fi
+    displayName: 'Run Playwright tests'

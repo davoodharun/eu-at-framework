@@ -1,0 +1,33 @@
+{
+  "name": "eu-automated-tests",
+  "version": "1.0.0",
+  "description": "Integration and E2E testing framework for EU operating companies",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:e2e": "playwright test --grep @e2e",
+    "test:integration": "playwright test --grep @integration",
+    "test:login": "playwright test --grep @login",
+    "test:outages": "playwright test --grep @outages",
+    "test:payments": "playwright test --grep @payments",
+    "test:stage": "playwright test --config=playwright.stage.config.ts",
+    "test:prod": "playwright test --config=playwright.prod.config.ts",
+    "test:debug": "playwright test --debug",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "install-browsers": "playwright install",
+    "report": "playwright show-report"
+  },
+  "keywords": ["playwright", "testing", "e2e", "integration", "automation"],
+  "author": "EU Testing Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "@types/node": "^20.0.0",
+    "dotenv": "^16.3.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  }
+} 

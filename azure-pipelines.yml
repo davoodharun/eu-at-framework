@@ -1,8 +1,5 @@
 trigger: none
 
-variables: 
-- group: terraform (nonprod)
-
 parameters:
   - name: testTags
     displayName: 'Test tags to run (e.g. @login,@e2e)'
@@ -12,33 +9,23 @@ parameters:
     displayName: 'Test category (e.g. login, outages, payments)'
     type: string
     default: ''
-  - name: keyVaultName
-    displayName: 'Azure Key Vault Name'
-    type: string
-    default: 'eu-test-credentials-stage-kv'
   - name: keyVaultUrl
     displayName: 'Azure Key Vault URL'
     type: string
     default: 'https://eu-test-credentials-stage-kv.vault.azure.net/'
-  - name: resourceGroupName
-    displayName: 'Resource Group Name'
-    type: string
-    default: 'eu-test-rg'
   - name: environment
     displayName: 'Environment (stage/prod)'
     type: string
     default: 'stage'
-  - name: deployInfrastructure
-    displayName: 'Deploy Infrastructure (Terraform)'
-    type: boolean
-    default: true
 
 pool:
   vmImage: 'ubuntu-latest'
 
-variables:
-  KEYVAULT_URL: ${{ parameters.keyVaultUrl }}
-
+variables: 
+  - name: KEYVAULT_URL
+    value: ${{ parameters.keyVaultUrl }}
+  - group: terraform (nonprod)
+  
 steps:
   - checkout: self
 

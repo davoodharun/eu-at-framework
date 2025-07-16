@@ -12,7 +12,7 @@ export default defineConfig({
     ['junit', { outputFile: 'test-results/prod-results.xml' }]
   ],
   use: {
-    baseURL: process.env.BASE_URL || 'https://bge.com',
+    baseURL: process.env.BASE_URL || 'https://secure.bge.com',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',

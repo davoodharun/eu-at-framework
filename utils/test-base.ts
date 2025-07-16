@@ -1,6 +1,6 @@
 import { test as base, expect, Page } from '@playwright/test';
 import { getTestCredentials, TestCredentials } from '../config/credentials';
-import { getOpcoUrl, OpcoConfig } from '../config/environments';
+import { getOpcoUrls, OpcoConfig } from '../config/environments';
 
 export interface TestOptions {
   opco: string;
@@ -11,18 +11,19 @@ export interface TestOptions {
 
 export class BaseTest {
   public opco: string;
-  public environment: 'stage' | 'production';
+  public environment: "stage" | "production";
   public testCategory: string;
   public testName?: string;
   public credentials: TestCredentials;
   public baseUrl: string;
+  public secureBaseUrl?: string;
 
   constructor(options: TestOptions) {
     this.opco = options.opco;
     this.environment = options.environment;
     this.testCategory = options.testCategory;
     this.testName = options.testName;
-    
+
     // Get credentials for this specific test
     this.credentials = getTestCredentials(
       this.opco,
@@ -30,31 +31,39 @@ export class BaseTest {
       this.testCategory,
       this.testName
     );
-    
+
     // Get the base URL for this opco and environment
-    const url = getOpcoUrl(this.opco, this.environment);
+    const url = getOpcoUrls(this.opco, this.environment);
     if (!url) {
-      throw new Error(`No URL found for opco: ${this.opco}, environment: ${this.environment}`);
+      throw new Error(
+        `No URL found for opco: ${this.opco}, environment: ${this.environment}`
+      );
     }
-    this.baseUrl = url;
+    this.baseUrl = url.anonUrl;
+    this.secureBaseUrl = url.secureUrl;
   }
 
-  public async navigateToPage(page: Page, path: string = '/'): Promise<void> {
+  public async navigateToPage(page: Page, path: string = "/"): Promise<void> {
     const fullUrl = `${this.baseUrl}${path}`;
+    await page.goto(fullUrl);
+  }
+
+  public async navigateToSecurePage(page: Page, path: string = "/"): Promise<void> {
+    const fullUrl = `${this.secureBaseUrl}${path}`;
     await page.goto(fullUrl);
   }
 
   public async login(page: Page): Promise<void> {
     // Navigate to login page
-    await this.navigateToPage(page, '/login');
-    
+    await this.navigateToSecurePage(page, "/accounts/login");
+
     // Fill in credentials
     await page.fill('[data-testid="username"]', this.credentials.username);
     await page.fill('[data-testid="password"]', this.credentials.password);
-    
+
     // Submit login form
     await page.click('[data-testid="login-button"]');
-    
+
     // Wait for successful login (adjust selector based on actual implementation)
     await page.waitForSelector('[data-testid="user-menu"]', { timeout: 10000 });
   }
@@ -62,22 +71,24 @@ export class BaseTest {
   public async logout(page: Page): Promise<void> {
     // Click on user menu
     await page.click('[data-testid="user-menu"]');
-    
+
     // Click logout
     await page.click('[data-testid="logout-button"]');
-    
+
     // Wait for logout to complete
-    await page.waitForSelector('[data-testid="login-form"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="login-form"]', {
+      timeout: 10000,
+    });
   }
 
   public async waitForPageLoad(page: Page): Promise<void> {
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState("networkidle");
   }
 
   public async takeScreenshot(page: Page, name: string): Promise<void> {
-    await page.screenshot({ 
+    await page.screenshot({
       path: `test-results/screenshots/${this.opco}_${this.environment}_${name}.png`,
-      fullPage: true 
+      fullPage: true,
     });
   }
 }

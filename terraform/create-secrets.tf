@@ -27,7 +27,7 @@ resource "azurerm_key_vault_secret" "test_credentials" {
   key_vault_id = azurerm_key_vault.test_credentials.id
   
   # Set a placeholder value - actual values will be entered manually
-  value = "PLACEHOLDER_VALUE_ENTER_MANUALLY_IN_PORTAL"
+  value = each.value.password != null ? each.value.password : "PLACEHOLDER_FOR_MANUAL_ENTRY"
   
   # Add tags for better organization
   tags = {

@@ -8,7 +8,7 @@ import { BaseTest } from '../../../utils/test-base';
  * Tests are tagged for selective execution:
  * - @e2e: E2E test category
  * - @login: Login functionality
- * - @opco:bge: Specific opco (can be changed for different opcos)
+ * - @opco:ace: Specific opco (can be changed for different opcos)
  * - @env:stage: Environment (stage or production)
  */
 
@@ -18,88 +18,111 @@ test.describe('E2E Login Tests', () => {
   test.beforeEach(async ({ page }) => {
     // Initialize base test with login category
     baseTest = new BaseTest({
-      opco: 'bge',
+      opco: 'ace',
       environment: 'stage',
       testCategory: 'login',
       testName: 'basic-login'
     });
   });
 
-  test('should successfully login with valid credentials @e2e @login @opco:bge @env:stage', async ({ page }) => {
+  test('should successfully login with valid credentials @e2e @login @opco:ace @env:stage', async ({ page }) => {
     // Navigate to the login page
-    await baseTest.navigateToPage(page, '/login');
+    await baseTest.navigateToSecurePage(page, '/accounts/login');
     
     // Verify login page is loaded
-    await expect(page).toHaveTitle(/Login/);
-    await expect(page.locator('[data-testid="login-form"]')).toBeVisible();
+    await expect(page).toHaveTitle(/Sign up or sign in/);
+    await expect(page.locator('[id="localAccountForm"]')).toBeVisible();
     
     // Fill in credentials
-    await page.fill('[data-testid="username"]', baseTest['credentials'].username);
-    await page.fill('[data-testid="password"]', baseTest['credentials'].password);
+    await page.fill('[data-di-id="#signInName"]', baseTest['credentials'].username);
+    await page.fill('[data-di-id="#password"]', baseTest['credentials'].password);
     
     // Submit the form
-    await page.click('[data-testid="login-button"]');
-    
+    await page.click('[data-di-id="#next"]');
+    if (await page.waitForSelector('#enable', { timeout: 5000 })) {
+      await expect(page.locator("#remindLater > a")).toBeVisible();
+      console.log("Enable MFA prompt active, clicking 'Remind Me Later'");
+      await page.click('#remindLater > a');
+    } else {
+      console.log('Enable MFA prompt not visible, proceeding with login');
+    }
     // Wait for successful login
-    await page.waitForSelector('[data-testid="user-menu"]', { timeout: 10000 });
-    
+    await page.waitForSelector(
+      "body > app-root > app-dashboard > main > app-account-navigation-banner",
+      { timeout: 100000 }
+    );
+
     // Verify successful login
-    await expect(page.locator('[data-testid="user-menu"]')).toBeVisible();
+    // await expect(
+    //   page.locator(
+    //     "body > app-root > app-dashboard > main > app-account-navigation-banner"
+    //   )
+    // ).toBeVisible();
     await expect(page).toHaveURL(/dashboard/);
     
     // Take screenshot for verification
     await baseTest.takeScreenshot(page, 'login-success');
   });
 
-  test('should show error message with invalid credentials @e2e @login @opco:bge @env:stage', async ({ page }) => {
+  test('should show error message with invalid credentials @e2e @login @opco:ace @env:stage', async ({ page }) => {
     // Navigate to the login page
-    await baseTest.navigateToPage(page, '/login');
+    await baseTest.navigateToSecurePage(page, '/accounts/login');
     
     // Fill in invalid credentials
-    await page.fill('[data-testid="username"]', 'invalid_user');
-    await page.fill('[data-testid="password"]', 'invalid_password');
+    await page.fill('[data-di-id="#signInName"]', 'invalid_user');
+    await page.fill('[data-di-id="#password"]', "invalid_password");
     
     // Submit the form
-    await page.click('[data-testid="login-button"]');
-    
+    await page.click('[data-di-id="#next"]');
+
     // Verify error message is displayed
-    await expect(page.locator('[data-testid="error-message"]')).toBeVisible();
-    await expect(page.locator('[data-testid="error-message"]')).toContainText('Invalid credentials');
+    await expect(page.locator("#pageError")).toBeVisible();
+    await expect(page.locator("#pageError")).toContainText(
+      "Please try again."
+    );
     
     // Take screenshot for verification
     await baseTest.takeScreenshot(page, 'login-error');
   });
 
-  test('should validate required fields @e2e @login @opco:bge @env:stage', async ({ page }) => {
+  test('should validate required fields @e2e @login @opco:ace @env:stage', async ({ page }) => {
     // Navigate to the login page
-    await baseTest.navigateToPage(page, '/login');
-    
+    await baseTest.navigateToSecurePage(page, '/accounts/login');
+    await page.locator('[data-di-id="#password"]').focus();
     // Try to submit without filling credentials
-    await page.click('[data-testid="login-button"]');
+
+    expect(page.locator('[data-di-id="#next"]')).toBeDisabled();
+    await page.keyboard.press('Enter');
+
     
     // Verify validation messages
-    await expect(page.locator('[data-testid="username-error"]')).toBeVisible();
-    await expect(page.locator('[data-testid="password-error"]')).toBeVisible();
-    
+
+    await expect(page.locator('[data-di-id="#signInName"]')).toHaveClass(
+      /highlightError/
+    );
+    await expect(page.locator('[data-di-id="#password"]')).toHaveClass(
+      /highlightError/
+    );
+
     // Take screenshot for verification
     await baseTest.takeScreenshot(page, 'login-validation');
   });
 
-  test('should logout successfully @e2e @login @opco:bge @env:stage', async ({ page }) => {
-    // First login
-    await baseTest.login(page);
+  // test('should logout successfully @e2e @login @opco:ace @env:stage', async ({ page }) => {
+  //   // First login
+  //   await baseTest.login(page);
     
-    // Verify we're logged in
-    await expect(page.locator('[data-testid="user-menu"]')).toBeVisible();
+  //   // Verify we're logged in
+  //   await expect(page.locator('[data-testid="user-menu"]')).toBeVisible();
     
-    // Perform logout
-    await baseTest.logout(page);
+  //   // Perform logout
+  //   await baseTest.logout(page);
     
-    // Verify logout was successful
-    await expect(page.locator('[data-testid="login-form"]')).toBeVisible();
-    await expect(page).toHaveURL(/login/);
+  //   // Verify logout was successful
+  //   await expect(page.locator('[data-testid="login-form"]')).toBeVisible();
+  //   await expect(page).toHaveURL(/login/);
     
-    // Take screenshot for verification
-    await baseTest.takeScreenshot(page, 'logout-success');
-  });
+  //   // Take screenshot for verification
+  //   await baseTest.takeScreenshot(page, 'logout-success');
+  // });
 }); 

@@ -1,8 +1,14 @@
 export interface OpcoConfig {
   name: string;
   domain: string;
-  stageUrl: string;
-  prodUrl: string;
+  anonUrl: string;
+  secureUrl: string;
+}
+
+export interface UrlConfig {
+  domain?: string;
+  anonUrl: string;
+  secureUrl: string;
 }
 
 export interface EnvironmentConfig {
@@ -15,76 +21,76 @@ export const ENVIRONMENTS: EnvironmentConfig = {
     {
       name: 'bge',
       domain: 'bge.com',
-      stageUrl: 'https://azstage.bge.com',
-      prodUrl: 'https://bge.com'
+      anonUrl: 'https://azstage.bge.com',
+      secureUrl: 'https://s-secure.bge.com'
     },
     {
       name: 'comed',
       domain: 'comed.com',
-      stageUrl: 'https://azstage.comed.com',
-      prodUrl: 'https://comed.com'
+      anonUrl: 'https://azstage.comed.com',
+      secureUrl: 'https://s-secure.comed.com'
     },
     {
       name: 'peco',
       domain: 'peco.com',
-      stageUrl: 'https://azstage.peco.com',
-      prodUrl: 'https://peco.com'
+      anonUrl: 'https://azstage.peco.com',
+      secureUrl: 'https://s-secure.peco.com'     
     },
     {
-      name: 'atlanticcityelectric',
+      name: 'ace',
       domain: 'atlanticcityelectric.com',
-      stageUrl: 'https://azstage.atlanticcityelectric.com',
-      prodUrl: 'https://atlanticcityelectric.com'
+      anonUrl: 'https://azstage.atlanticcityelectric.com',
+      secureUrl: 'https://s-secure.atlanticcityelectric.com', 
     },
     {
       name: 'delmarva',
       domain: 'delmarva.com',
-      stageUrl: 'https://azstage.delmarva.com',
-      prodUrl: 'https://delmarva.com'
+      anonUrl: 'https://azstage.delmarva.com',
+      secureUrl: 'https://s-secure.delmarva.com',
     },
     {
       name: 'pepco',
       domain: 'pepco.com',
-      stageUrl: 'https://azstage.pepco.com',
-      prodUrl: 'https://pepco.com'
+      anonUrl: 'https://azstage.pepco.com',
+      secureUrl: 'https://s-secure.pepco.com',
     }
   ],
   production: [
     {
       name: 'bge',
       domain: 'bge.com',
-      stageUrl: 'https://azstage.bge.com',
-      prodUrl: 'https://bge.com'
+      anonUrl: 'https://bge.com',
+      secureUrl: 'https://secure.bge.com'
     },
     {
       name: 'comed',
       domain: 'comed.com',
-      stageUrl: 'https://azstage.comed.com',
-      prodUrl: 'https://comed.com'
+      anonUrl: 'https://comed.com',
+      secureUrl: 'https://secure.comed.com'
     },
     {
       name: 'peco',
       domain: 'peco.com',
-      stageUrl: 'https://azstage.peco.com',
-      prodUrl: 'https://peco.com'
+      anonUrl: 'https://peco.com',
+      secureUrl: 'https://secure.peco.com'
     },
     {
       name: 'atlanticcityelectric',
       domain: 'atlanticcityelectric.com',
-      stageUrl: 'https://azstage.atlanticcityelectric.com',
-      prodUrl: 'https://atlanticcityelectric.com'
+      anonUrl: 'https://atlanticcityelectric.com',
+      secureUrl: 'https://secure.atlanticcityelectric.com'
     },
     {
       name: 'delmarva',
       domain: 'delmarva.com',
-      stageUrl: 'https://azstage.delmarva.com',
-      prodUrl: 'https://delmarva.com'
+      anonUrl: 'https://delmarva.com',
+      secureUrl: 'https://secure.delmarva.com'
     },
     {
       name: 'pepco',
       domain: 'pepco.com',
-      stageUrl: 'https://azstage.pepco.com',
-      prodUrl: 'https://pepco.com'
+      anonUrl: 'https://pepco.com',
+      secureUrl: 'https://secure.pepco.com'
     }
   ]
 };
@@ -97,7 +103,7 @@ export function getAllOpcos(environment: 'stage' | 'production'): OpcoConfig[] {
   return ENVIRONMENTS[environment];
 }
 
-export function getOpcoUrl(opcoName: string, environment: 'stage' | 'production'): string | undefined {
+export function getOpcoUrls(opcoName: string, environment: 'stage' | 'production'): UrlConfig | undefined {
   const opco = getOpcoConfig(opcoName, environment);
-  return opco ? (environment === 'stage' ? opco.stageUrl : opco.prodUrl) : undefined;
-} 
+  return opco ? { anonUrl: opco.anonUrl, secureUrl: opco.secureUrl } : undefined;
+}

@@ -135,6 +135,11 @@ npx playwright test --grep @login
 npx playwright test --grep @bge
 npx playwright test --grep @stage
 
+# Run multi-opco tests
+npm run test:multi-opco
+npm run test:multi-opco:stage
+npm run test:multi-opco:prod
+
 # Run tests in headed mode (visible browser)
 npm run test:headed
 
@@ -169,6 +174,9 @@ npx playwright test --grep @bge
 
 # Run all stage environment tests
 npx playwright test --grep @stage
+
+# Run multi-opco tests in parallel
+npm run test:multi-opco -- --workers=6
 ```
 
 ## Test Categories
@@ -180,6 +188,11 @@ npx playwright test --grep @stage
 
 ### Integration Tests
 - **API**: Backend connectivity, endpoint validation, response format testing
+
+### Multi-Opco Tests
+- **Multi-Opco E2E**: Run the same E2E test logic across multiple opcos
+- **Multi-Opco API**: Run the same API test logic across multiple opcos
+- **Template-based**: Use test templates for consistent multi-opco testing
 
 ## Credential Management
 
@@ -246,6 +259,65 @@ Credentials are stored in `config/credentials.yml` with the following structure:
      const response = await request.get(`${baseUrl}/api/endpoint`);
      expect(response.status()).toBe(200);
    });
+   ```
+
+### Creating Multi-Opco Tests
+
+1. **Using Multi-Opco Test Runner**:
+   ```typescript
+   import { test, expect } from '@playwright/test';
+   import { MultiOpcoTestRunner, createMultiOpcoTestRunner } from '../../utils/multi-opco-test-runner';
+
+   test.describe('Multi-Opco Feature Tests', () => {
+     let multiOpcoRunner: MultiOpcoTestRunner;
+
+     test.beforeEach(async ({ page }) => {
+       multiOpcoRunner = createMultiOpcoTestRunner({
+         environment: 'stage',
+         testCategory: 'new-feature'
+       });
+     });
+
+     test('should test feature across all opcos @e2e @multi-opco @env:stage', async ({ page }) => {
+       const opcosToTest = multiOpcoRunner.getOpcosToTest();
+       
+       for (const opco of opcosToTest) {
+         const context = multiOpcoRunner.createOpcoTestContext(opco);
+         // Test implementation for each opco
+       }
+     });
+   });
+   ```
+
+2. **Using Test Templates**:
+   ```typescript
+   import { createE2ETestTemplate } from '../../utils/test-templates';
+
+   createE2ETestTemplate(
+     'should test feature across all opcos @e2e @multi-opco @env:stage',
+     async (context, page) => {
+       // Test implementation
+     },
+     {
+       environment: 'stage',
+       testCategory: 'new-feature'
+     }
+   );
+   ```
+
+3. **Testing Specific Opcos**:
+   ```typescript
+   createE2ETestTemplate(
+     'should test specific opcos @e2e @multi-opco @env:stage',
+     async (context, page) => {
+       // Test implementation
+     },
+     {
+       environment: 'stage',
+       testCategory: 'new-feature',
+       opcos: ['bge', 'comed', 'peco'] // Only test these opcos
+     }
+   );
    ```
 
 ### Test Tagging

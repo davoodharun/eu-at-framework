@@ -18,14 +18,26 @@
     "test:debug": "playwright test --debug",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
+    "test:multi-opco": "playwright test --grep @multi-opco",
+    "test:multi-opco:stage": "playwright test --config=playwright.stage.config.ts --grep @multi-opco",
+    "test:multi-opco:prod": "playwright test --config=playwright.prod.config.ts --grep @multi-opco",
+    "test:multi-opco:stage:ci": "playwright test --config=playwright.stage.config.ts --grep @multi-opco --reporter=json,junit",
+    "test:multi-opco:prod:ci": "playwright test --config=playwright.prod.config.ts --grep @multi-opco --reporter=json,junit",
     "install-browsers": "playwright install",
     "report": "playwright show-report"
   },
-  "keywords": ["playwright", "testing", "e2e", "integration", "automation"],
+  "keywords": [
+    "playwright",
+    "testing",
+    "e2e",
+    "integration",
+    "automation"
+  ],
   "author": "EU Testing Team",
   "license": "MIT",
   "devDependencies": {
     "@playwright/test": "^1.40.0",
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.0.0",
     "dotenv": "^16.3.0",
     "typescript": "^5.0.0"
@@ -33,4 +45,4 @@
   "dependencies": {
     "js-yaml": "^4.1.0"
   }
-} 
+}

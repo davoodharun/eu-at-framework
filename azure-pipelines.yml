@@ -17,6 +17,10 @@ parameters:
     displayName: 'Environment (stage/prod)'
     type: string
     default: 'stage'
+  - name: runMultiOpco
+    displayName: 'Run Multi-Opco Tests'
+    type: boolean
+    default: false
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -77,6 +81,16 @@ steps:
         fi
       fi
     displayName: 'Run Playwright tests (non-interactive)'
+
+  # Run Multi-Opco Tests (Non-interactive)
+  - script: |
+      if [ "${{ parameters.environment }}" = "prod" ]; then
+        npm run test:multi-opco:prod:ci
+      else
+        npm run test:multi-opco:stage:ci
+      fi
+    displayName: 'Run Multi-Opco tests (non-interactive)'
+    condition: and(succeeded(), eq('${{ parameters.runMultiOpco }}', 'true'))
 
   # Debug: List test-results directory contents
   - script: |

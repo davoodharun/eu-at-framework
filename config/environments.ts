@@ -25,13 +25,13 @@ export const ENVIRONMENTS: EnvironmentConfig = {
       secureUrl: 'https://s-secure.bge.com'
     },
     {
-      name: 'comed',
+      name: 'com',
       domain: 'comed.com',
       anonUrl: 'https://azstage.comed.com',
       secureUrl: 'https://s-secure.comed.com'
     },
     {
-      name: 'peco',
+      name: 'pec',
       domain: 'peco.com',
       anonUrl: 'https://azstage.peco.com',
       secureUrl: 'https://s-secure.peco.com'     
@@ -43,13 +43,13 @@ export const ENVIRONMENTS: EnvironmentConfig = {
       secureUrl: 'https://s-secure.atlanticcityelectric.com', 
     },
     {
-      name: 'delmarva',
+      name: 'dpl',
       domain: 'delmarva.com',
       anonUrl: 'https://azstage.delmarva.com',
       secureUrl: 'https://s-secure.delmarva.com',
     },
     {
-      name: 'pepco',
+      name: 'pep',
       domain: 'pepco.com',
       anonUrl: 'https://azstage.pepco.com',
       secureUrl: 'https://s-secure.pepco.com',
@@ -63,31 +63,31 @@ export const ENVIRONMENTS: EnvironmentConfig = {
       secureUrl: 'https://secure.bge.com'
     },
     {
-      name: 'comed',
+      name: 'com',
       domain: 'comed.com',
       anonUrl: 'https://comed.com',
       secureUrl: 'https://secure.comed.com'
     },
     {
-      name: 'peco',
+      name: 'pec',
       domain: 'peco.com',
       anonUrl: 'https://peco.com',
       secureUrl: 'https://secure.peco.com'
     },
     {
-      name: 'atlanticcityelectric',
+      name: 'ace',
       domain: 'atlanticcityelectric.com',
       anonUrl: 'https://atlanticcityelectric.com',
       secureUrl: 'https://secure.atlanticcityelectric.com'
     },
     {
-      name: 'delmarva',
+      name: 'dpl',
       domain: 'delmarva.com',
       anonUrl: 'https://delmarva.com',
       secureUrl: 'https://secure.delmarva.com'
     },
     {
-      name: 'pepco',
+      name: 'pep',
       domain: 'pepco.com',
       anonUrl: 'https://pepco.com',
       secureUrl: 'https://secure.pepco.com'

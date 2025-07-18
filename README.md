@@ -7,20 +7,29 @@ A comprehensive integration and end-to-end testing framework for EU operating co
 This framework provides automated testing capabilities for 6 operating companies (opcos) across both stage and production environments:
 
 ### Production Sites
-- bge.com
-- comed.com
-- peco.com
-- atlanticcityelectric.com
-- delmarva.com
-- pepco.com
+- bge.com (BGE)
+- comed.com (ComEd)
+- peco.com (PECO)
+- atlanticcityelectric.com (Atlantic City Electric)
+- delmarva.com (Delmarva)
+- pepco.com (PEPCO)
 
 ### Stage Sites
-- azstage.bge.com
-- azstage.comed.com
-- azstage.peco.com
-- azstage.atlanticcityelectric.com
-- azstage.delmarva.com
-- azstage.pepco.com
+- azstage.bge.com (BGE)
+- azstage.comed.com (ComEd)
+- azstage.peco.com (PECO)
+- azstage.atlanticcityelectric.com (Atlantic City Electric)
+- azstage.delmarva.com (Delmarva)
+- azstage.pepco.com (PEPCO)
+
+### Opco Short Names
+The framework uses short names in code and configuration:
+- `bge` - BGE
+- `com` - ComEd
+- `pec` - PECO
+- `ace` - Atlantic City Electric
+- `dpl` - Delmarva
+- `pep` - PEPCO
 
 ## Features
 
@@ -135,10 +144,11 @@ npx playwright test --grep @login
 npx playwright test --grep @bge
 npx playwright test --grep @stage
 
-# Run multi-opco tests
-npm run test:multi-opco
-npm run test:multi-opco:stage
-npm run test:multi-opco:prod
+# Run multi-opco tests (using short names)
+npm run test:login:bge
+npm run test:login:com
+npm run test:login:stage
+npm run test:api:prod
 
 # Run tests in headed mode (visible browser)
 npm run test:headed
@@ -263,40 +273,18 @@ Credentials are stored in `config/credentials.yml` with the following structure:
 
 ### Creating Multi-Opco Tests
 
-1. **Using Multi-Opco Test Runner**:
+1. **Using Test Generator (Recommended)**:
    ```typescript
    import { test, expect } from '@playwright/test';
-   import { MultiOpcoTestRunner, createMultiOpcoTestRunner } from '../../utils/multi-opco-test-runner';
+   import { generateOpcoTest, TestGeneratorOptions, OpcoTestContext } from '../../utils/test-generator';
 
-   test.describe('Multi-Opco Feature Tests', () => {
-     let multiOpcoRunner: MultiOpcoTestRunner;
-
-     test.beforeEach(async ({ page }) => {
-       multiOpcoRunner = createMultiOpcoTestRunner({
-         environment: 'stage',
-         testCategory: 'new-feature'
-       });
-     });
-
-     test('should test feature across all opcos @e2e @multi-opco @env:stage', async ({ page }) => {
-       const opcosToTest = multiOpcoRunner.getOpcosToTest();
-       
-       for (const opco of opcosToTest) {
-         const context = multiOpcoRunner.createOpcoTestContext(opco);
-         // Test implementation for each opco
-       }
-     });
-   });
-   ```
-
-2. **Using Test Templates**:
-   ```typescript
-   import { createE2ETestTemplate } from '../../utils/test-templates';
-
-   createE2ETestTemplate(
-     'should test feature across all opcos @e2e @multi-opco @env:stage',
+   // This creates separate tests for each opco specified in OPCO_LIST
+   generateOpcoTest(
+     'should test feature across all opcos',
      async (context, page) => {
-       // Test implementation
+       // Test implementation - automatically uses correct credentials and URLs
+       await page.goto(`${context.secureBaseUrl}/feature-page`);
+       // ... rest of test
      },
      {
        environment: 'stage',
@@ -305,19 +293,71 @@ Credentials are stored in `config/credentials.yml` with the following structure:
    );
    ```
 
-3. **Testing Specific Opcos**:
+2. **Using Test Generator for API Tests**:
    ```typescript
-   createE2ETestTemplate(
-     'should test specific opcos @e2e @multi-opco @env:stage',
-     async (context, page) => {
-       // Test implementation
+   import { generateOpcoAPITest } from '../../utils/test-generator';
+
+   generateOpcoAPITest(
+     'should test API endpoint across all opcos',
+     async (context, request) => {
+       const response = await request.get(`${context.baseUrl}/api/endpoint`);
+       expect(response.status()).toBe(200);
      },
      {
        environment: 'stage',
-       testCategory: 'new-feature',
-       opcos: ['bge', 'comed', 'peco'] // Only test these opcos
+       testCategory: 'api'
      }
    );
+   ```
+
+3. **Opco-Specific Test Tagging**:
+   ```typescript
+   import { generateOpcoSpecificTest } from '../../utils/test-generator';
+
+   // This test runs ONLY for ace and bge, regardless of OPCO_LIST
+   generateOpcoSpecificTest(
+     'should run only for ace and bge',
+     async (context, page) => {
+       // Test implementation - runs only for specified opcos
+       await page.goto(context.baseUrl);
+       
+       // Add opco-specific logic
+       if (context.opco === 'ace') {
+         console.log('Running ACE-specific logic');
+       } else if (context.opco === 'bge') {
+         console.log('Running BGE-specific logic');
+       }
+     },
+     {
+       environment: 'stage',
+       testCategory: 'login',
+       opcos: ['ace', 'bge']  // Only these opcos
+     }
+   );
+   ```
+
+4. **All-Opcos Test Tagging**:
+   ```typescript
+   import { generateAllOpcosTest } from '../../utils/test-generator';
+
+   // This test runs for ALL opcos, regardless of OPCO_LIST
+   generateAllOpcosTest(
+     'should run for all opcos',
+     async (context, page) => {
+       // Test implementation - runs for all opcos
+       await page.goto(context.baseUrl);
+     },
+     {
+       environment: 'stage',
+       testCategory: 'login'
+     }
+   );
+   ```
+
+5. **Testing Specific Opcos**:
+   ```bash
+   # Set environment variable to test specific opcos
+   npx cross-env OPCO_LIST=bge,com,pec npx playwright test --grep "test name"
    ```
 
 ### Test Tagging

@@ -273,12 +273,12 @@ Credentials are stored in `config/credentials.yml` with the following structure:
 
 ### Creating Multi-Opco Tests
 
-1. **Using Test Generator (Recommended)**:
+1. **Using Unified Test Generator (Recommended)**:
    ```typescript
    import { test, expect } from '@playwright/test';
    import { generateOpcoTest, TestGeneratorOptions, OpcoTestContext } from '../../utils/test-generator';
 
-   // This creates separate tests for each opco specified in OPCO_LIST
+   // Example 1: Default behavior - runs in both environments for all opcos
    generateOpcoTest(
      'should test feature across all opcos',
      async (context, page) => {
@@ -287,8 +287,34 @@ Credentials are stored in `config/credentials.yml` with the following structure:
        // ... rest of test
      },
      {
-       environment: 'stage',
        testCategory: 'new-feature'
+       // No environment specified = runs in both stage and production
+       // No opcos specified = uses OPCO_LIST/OPCO_SKIP logic
+     }
+   );
+
+   // Example 2: Stage-only test
+   generateOpcoTest(
+     'should test feature only in stage',
+     async (context, page) => {
+       // Test implementation
+     },
+     {
+       environment: 'stage', // Only runs in stage
+       testCategory: 'new-feature'
+     }
+   );
+
+   // Example 3: Specific opcos only
+   generateOpcoTest(
+     'should test feature for ace and bge',
+     async (context, page) => {
+       // Test implementation
+     },
+     {
+       opcos: ['ace', 'bge'], // Only runs for ace and bge
+       testCategory: 'new-feature'
+       // No environment specified = runs in both environments
      }
    );
    ```
@@ -358,6 +384,20 @@ Credentials are stored in `config/credentials.yml` with the following structure:
    ```bash
    # Set environment variable to test specific opcos
    npx cross-env OPCO_LIST=bge,com,pec npx playwright test --grep "test name"
+   ```
+
+6. **Environment and Opco Selection Logic**:
+   ```bash
+   # Test with specific environment
+   npx cross-env TEST_ENVIRONMENT=stage npx playwright test
+   npx cross-env TEST_ENVIRONMENT=production npx playwright test
+   
+   # Combine environment and opco selection
+   npx cross-env TEST_ENVIRONMENT=stage OPCO_LIST=ace,bge npx playwright test
+   
+   # Test specific opcos
+   npx cross-env OPCO_LIST=ace,bge npx playwright test
+   npx cross-env OPCO_SKIP=com,pec npx playwright test
    ```
 
 ### Test Tagging

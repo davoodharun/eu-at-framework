@@ -11,6 +11,8 @@ export default defineConfig({
     ['json', { outputFile: 'test-results/prod-results.json' }],
     ['junit', { outputFile: 'test-results/prod-results.xml' }]
   ],
+  /* Custom output directory for test results */
+  outputDir: 'test-results',
   use: {
     baseURL: process.env.BASE_URL || 'https://secure.bge.com',
     trace: 'on-first-retry',

@@ -1,118 +1,123 @@
 trigger: none
 
 parameters:
-  - name: testTags
-    displayName: 'Test tags to run (e.g. @login,@e2e)'
+  - name: opcos
+    displayName: 'Select Opcos'
+    type: object
+    default:
+      - ace
+      - bge
+      - com
+      - pec
+      - dpl
+      - pep
+    values:
+      - ace
+      - bge
+      - com
+      - pec
+      - dpl
+      - pep
+
+  - name: tags
+    displayName: 'Select Test Tags'
+    type: object
+    default:
+      - '@login'
+    values:
+      - '@login'
+      - '@outages'
+      - '@payments'
+      - '@e2e'
+      - '@api'
+
+  - name: environment
+    displayName: 'Environment'
     type: string
-    default: ''
-  - name: testCategory
-    displayName: 'Test category (e.g. login, outages, payments)'
-    type: string
-    default: ''
+    default: 'stage'
+    values:
+      - stage
+      - prod
+
   - name: keyVaultUrl
     displayName: 'Azure Key Vault URL'
     type: string
     default: 'https://eu-test-credentials-stage-kv.vault.azure.net/'
-  - name: environment
-    displayName: 'Environment (stage/prod)'
-    type: string
-    default: 'stage'
-  - name: runMultiOpco
-    displayName: 'Run Multi-Opco Tests'
-    type: boolean
-    default: false
 
 pool:
   vmImage: 'ubuntu-latest'
 
-variables: 
+variables:
   - name: KEYVAULT_URL
     value: ${{ parameters.keyVaultUrl }}
   - group: terraform (non-prod)
-  
-steps:
-  - checkout: self
 
-  # Terraform Infrastructure Deployment
+stages:
+- ${{ each opco in parameters.opcos }}:
+  - stage: test_${{ opco }}
+    displayName: "Test ${{ opco | upper }}"
+    jobs:
+      - job: run_tests
+        displayName: "Run Playwright tests for ${{ opco }}"
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
 
-  # Python Setup
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '3.10'
+          # Terraform Infrastructure Deployment (if needed, add here)
 
-  - script: |
-      python -m pip install --upgrade pip
-      pip install -r requirements.txt
-    displayName: 'Install Python dependencies'
+          # Python Setup
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.10'
 
-  # Download secrets from Key Vault and generate credentials.yml
-  - script: |
-      python scripts/keyvault_to_credentials.py
-    displayName: 'Download secrets from Key Vault and generate credentials.yml'
-    env:
-      AZURE_CLIENT_ID: $(AzureClientId)
-      AZURE_TENANT_ID: $(AzureTenantId)
-      AZURE_CLIENT_SECRET: $(AzureClientSecret)
-      KEYVAULT_URL: $(KEYVAULT_URL)
+          - script: |
+              python -m pip install --upgrade pip
+              pip install -r requirements.txt
+            displayName: 'Install Python dependencies'
 
-  # Node.js and Playwright Setup
-  - script: |
-      npm ci
-      npx playwright install chromium
-    displayName: 'Install Node.js dependencies and Playwright Chrome browser only'
+          # Download secrets from Key Vault and generate credentials.yml
+          - script: |
+              python scripts/keyvault_to_credentials.py
+            displayName: 'Download secrets from Key Vault and generate credentials.yml'
+            env:
+              AZURE_CLIENT_ID: $(AzureClientId)
+              AZURE_TENANT_ID: $(AzureTenantId)
+              AZURE_CLIENT_SECRET: $(AzureClientSecret)
+              KEYVAULT_URL: $(KEYVAULT_URL)
 
-  # Run Playwright Tests (Non-interactive)
-  - script: |
-      if [ "${{ parameters.environment }}" = "prod" ]; then
-        if [ -n "${{ parameters.testTags }}" ]; then
-          npm run test:prod:ci -- --grep "${{ parameters.testTags }}"
-        elif [ -n "${{ parameters.testCategory }}" ]; then
-          npm run test:prod:ci -- --grep "@${{ parameters.testCategory }}"
-        else
-          npm run test:prod:ci
-        fi
-      else
-        if [ -n "${{ parameters.testTags }}" ]; then
-          npm run test:stage:ci -- --grep "${{ parameters.testTags }}"
-        elif [ -n "${{ parameters.testCategory }}" ]; then
-          npm run test:stage:ci -- --grep "@${{ parameters.testCategory }}"
-        else
-          npm run test:stage:ci
-        fi
-      fi
-    displayName: 'Run Playwright tests (non-interactive)'
+          # Node.js and Playwright Setup
+          - script: |
+              npm ci
+              npx playwright install chromium
+            displayName: 'Install Node.js dependencies and Playwright Chrome browser only'
 
-  # Run Multi-Opco Tests (Non-interactive)
-  - script: |
-      if [ "${{ parameters.environment }}" = "prod" ]; then
-        npm run test:multi-opco:prod:ci
-      else
-        npm run test:multi-opco:stage:ci
-      fi
-    displayName: 'Run Multi-Opco tests (non-interactive)'
-    condition: and(succeeded(), eq('${{ parameters.runMultiOpco }}', 'true'))
+          # Run Playwright Tests (Non-interactive)
+          - script: |
+              OPCO_LIST=${{ opco }} npx cross-env TEST_ENVIRONMENT=${{ parameters.environment }} npx playwright test --grep "${{ join(parameters.tags, '|') }}"
+            displayName: "Run Playwright tests for ${{ opco }} with tags ${{ join(parameters.tags, ', ') }}"
 
-  # Debug: List test-results directory contents
-  - script: |
-      echo "Listing test-results directory contents:"
-      ls -R test-results || echo "test-results directory not found"
-    displayName: 'List test-results directory contents'
-    condition: succeededOrFailed()
+          # Debug: List test-results directory contents
+          - script: |
+              echo "Listing test-results directory contents:"
+              ls -R test-results || echo "test-results directory not found"
+            displayName: 'List test-results directory contents'
+            condition: succeededOrFailed()
 
-  # Publish Test Results
-  - task: PublishTestResults@2
-    condition: succeededOrFailed()
-    inputs:
-      testRunner: JUnit
-      testResultsFiles: 'test-results/**/*.xml'
-      testRunTitle: 'Playwright Tests - ${{ parameters.environment }}'
-    displayName: 'Publish JUnit Test Results'
+          # Publish Test Results
+          - task: PublishTestResults@2
+            condition: succeededOrFailed()
+            inputs:
+              testRunner: JUnit
+              testResultsFiles: 'test-results/**/*.xml'
+              testRunTitle: 'Playwright Tests - ${{ parameters.environment }} - ${{ opco }}'
+            displayName: 'Publish JUnit Test Results'
 
-  # Publish JSON Test Results
-  - task: PublishPipelineArtifact@1
-    condition: succeededOrFailed()
-    inputs:
-      targetPath: 'test-results'
-      artifact: 'test-results-${{ parameters.environment }}'
-      publishLocation: 'pipeline'
-    displayName: 'Publish JSON Test Results'
+          # Publish JSON Test Results
+          - task: PublishPipelineArtifact@1
+            condition: succeededOrFailed()
+            inputs:
+              targetPath: 'test-results'
+              artifact: 'test-results-${{ parameters.environment }}-${{ opco }}'
+              publishLocation: 'pipeline'
+            displayName: 'Publish JSON Test Results'

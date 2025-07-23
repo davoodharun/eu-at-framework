@@ -16,14 +16,15 @@ Can we make this so we can run a test for one or many sites? Depending on white 
 The framework now supports running tests across multiple opcos (sites) without code duplication. Here's what has been implemented:
 
 ### 🎯 Key Features
-- **Test Generator**: Dynamically generate separate test instances for each opco
+- **Unified Test Generator**: Single function for all test scenarios with intelligent defaults
 - **Dynamic Credential Resolution**: Automatically grab the right credentials for each opco
+- **Flexible Environment Selection**: Test in stage, production, or both environments
 - **Flexible Opco Selection**: Test all opcos, specific opcos, or exclude certain opcos
-- **Opco-Specific Test Tagging**: Run tests only for specific opcos regardless of OPCO_LIST
-- **All-Opcos Test Tagging**: Run tests for all opcos regardless of OPCO_LIST
+- **Intelligent Defaults**: No configuration needed for common scenarios
 - **Environment Support**: Works across both stage and production environments
 - **CI Integration**: Updated Azure pipeline to support multi-opco testing
 - **Consistent Naming**: Uses short names in code, full names in URLs
+- **Reusable Login Flow**: Login once, reuse authenticated state across multiple tests
 
 ### 📋 Opco Name Mapping
 | Short Name | Full Name | Domain |
@@ -50,16 +51,22 @@ npm run test:api:bge
 npm run test:login:stage
 npm run test:api:prod
 
-# Custom opco selection
-npx cross-env OPCO_LIST=bge,com,pec npx playwright test tests/e2e/generated-login.spec.ts
-npx cross-env OPCO_SKIP=ace,dpl npx playwright test tests/e2e/generated-login.spec.ts
+# Environment-specific testing
+npm run test:env:stage
+npm run test:env:prod
+npm run test:env:stage:login
+npm run test:env:prod:ace
+
+# Custom opco and environment selection
+npx cross-env TEST_ENVIRONMENT=stage OPCO_LIST=bge,com,pec npx playwright test tests/e2e/generated-login.spec.ts
+npx cross-env TEST_ENVIRONMENT=production OPCO_SKIP=ace,dpl npx playwright test tests/e2e/generated-login.spec.ts
 ```
 
-#### 2. Using Test Generator (Recommended)
+#### 2. Using Unified Test Generator (Recommended)
 ```typescript
 import { generateOpcoTest } from '../../utils/test-generator';
 
-// This creates separate tests for each opco specified in OPCO_LIST
+// Example 1: Default behavior - runs in both environments for all opcos
 generateOpcoTest(
   'should successfully login with valid credentials',
   async (context, page) => {
@@ -69,55 +76,100 @@ generateOpcoTest(
     // ... rest of test
   },
   {
-    environment: 'stage',
+    testCategory: 'login'
+    // No environment specified = runs in both stage and production
+    // No opcos specified = uses OPCO_LIST/OPCO_SKIP logic
+  }
+);
+
+// Example 2: Stage-only test
+generateOpcoTest(
+  'should run only in stage environment',
+  async (context, page) => {
+    // Test implementation
+  },
+  {
+    environment: 'stage', // Only runs in stage
     testCategory: 'login'
   }
 );
-```
 
-#### 3. Opco-Specific Test Tagging
-```typescript
-import { generateOpcoSpecificTest } from '../../utils/test-generator';
-
-// This test runs ONLY for ace and bge, regardless of OPCO_LIST
-generateOpcoSpecificTest(
+// Example 3: Specific opcos only
+generateOpcoTest(
   'should run only for ace and bge',
   async (context, page) => {
-    // Test implementation - runs only for specified opcos
-    await page.goto(context.baseUrl);
-    
-    // Add opco-specific logic
-    if (context.opco === 'ace') {
-      console.log('Running ACE-specific logic');
-    } else if (context.opco === 'bge') {
-      console.log('Running BGE-specific logic');
-    }
+    // Test implementation
   },
   {
-    environment: 'stage',
-    testCategory: 'login',
-    opcos: ['ace', 'bge']  // Only these opcos
-  }
-);
-```
-
-#### 4. All-Opcos Test Tagging
-```typescript
-import { generateAllOpcosTest } from '../../utils/test-generator';
-
-// This test runs for ALL opcos, regardless of OPCO_LIST
-generateAllOpcosTest(
-  'should run for all opcos',
-  async (context, page) => {
-    // Test implementation - runs for all opcos
-    await page.goto(context.baseUrl);
-  },
-  {
-    environment: 'stage',
+    opcos: ['ace', 'bge'], // Only runs for ace and bge
     testCategory: 'login'
+    // No environment specified = runs in both environments
+  }
+);
+
+// Example 4: Stage + specific opcos
+generateOpcoTest(
+  'should run in stage for com and pec',
+  async (context, page) => {
+    // Test implementation
+  },
+  {
+    environment: 'stage', // Only runs in stage
+    opcos: ['com', 'pec'], // Only runs for com and pec
+    credentialId: 'login'
+  }
+);
+
+// Example 5: Reusable login flow
+generateOpcoTest(
+  'should login and store state',
+  async (context, page) => {
+    // Login is automatically handled and state is stored
+    await expect(page.locator('[data-testid="user-menu"]')).toBeVisible();
+  },
+  {
+    credentialId: 'login',
+    requiresLogin: true // Triggers login and stores state
+  }
+);
+
+generateOpcoTest(
+  'should access profile without re-login',
+  async (context, page) => {
+    await page.goto(context.secureBaseUrl + '/profile');
+    await expect(page.locator('[data-testid="profile"]')).toBeVisible();
+  },
+  {
+    credentialId: 'login',
+    useSharedLogin: true // Uses stored login state
   }
 );
 ```
+
+#### 3. Environment and Opco Selection Logic
+
+**Environment Selection:**
+- If no `environment` specified → runs in both stage and production
+- If `environment: 'stage'` → runs only in stage
+- If `environment: 'production'` → runs only in production  
+- If `environment: ['stage', 'production']` → runs in both (explicit)
+- If `TEST_ENVIRONMENT` env var set → overrides to single environment
+
+**Opco Selection:**
+- If no `opcos` specified → uses `OPCO_LIST`/`OPCO_SKIP` logic
+- If `opcos: ['ace', 'bge']` → runs only for specified opcos
+- If `OPCO_LIST` env var set → overrides to specific opcos
+- If `OPCO_SKIP` env var set → excludes specific opcos
+
+**Priority Order:**
+1. Explicit `environment`/`opcos` in test options (highest)
+2. Environment variables (`TEST_ENVIRONMENT`, `OPCO_LIST`, `OPCO_SKIP`)
+3. Default behavior (both environments, all opcos)
+
+**Login Flow Options:**
+- `requiresLogin: true` - Performs fresh login and stores state
+- `useSharedLogin: true` - Uses stored login state if available, falls back to fresh login
+- No login option - No authentication required (uses anonymous URLs)
 
 #### 3. Legacy Tests (Updated)
 Existing tests now respect the OPCO_LIST environment variable:
@@ -151,10 +203,18 @@ npx cross-env OPCO_SKIP=ace,dpl npx playwright test --grep @api
 ```
 
 ### 📁 New Files Created
-- `utils/test-generator.ts` - Core multi-opco testing functionality with opco-specific tagging
+- `utils/test-generator.ts` - Unified test generator with intelligent defaults
 - `tests/e2e/generated-login.spec.ts` - Example generated multi-opco E2E tests
 - `tests/integration/generated-api.spec.ts` - Example generated multi-opco API tests
-- `tests/e2e/opco-specific-tests.spec.ts` - Examples of opco-specific test tagging
+- `tests/e2e/unified-test-examples.spec.ts` - Examples of unified test generator usage
+- `tests/e2e/reusable-login-examples.spec.ts` - Examples of reusable login flow
+- `REUSABLE_LOGIN.md` - Comprehensive documentation for reusable login flow
+
+### 🔧 Updated Files
+- `tests/e2e/opco-specific-tests.spec.ts` - Updated to use unified approach
+- `tests/e2e/environment-specific-tests.spec.ts` - Updated to use unified approach
+- `utils/test-generator.ts` - Added reusable login flow functionality
+- `tests/e2e/unified-test-examples.spec.ts` - Updated with login examples
 
 ### 🔧 Updated Files
 - `package.json` - Added multi-opco test scripts
@@ -167,3 +227,4 @@ npx cross-env OPCO_SKIP=ace,dpl npx playwright test --grep @api
 - **Flexible Execution**: Test all opcos, specific opcos, or exclude certain ones
 - **Consistent Patterns**: Templates ensure consistent test structure
 - **CI/CD Ready**: Integrated with Azure pipeline for automated testing
+- **Reusable Login Flow**: Login once, reuse authenticated state across multiple tests

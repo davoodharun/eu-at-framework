@@ -189,7 +189,8 @@ export async function performLoginAndStoreState(
   await page.fill('[aria-label="Password"]', context.credentials.password, { timeout: 70000 } );
   
   // Submit the form
-  await expect(page.locator('[data-di-id="#next"]')).toBeVisible({ timeout: 70000 });
+  
+  await expect(page.locator('[data-di-id="#next"]')).toBeEnabled({ timeout: 70000 });
   await page.click('[data-di-id="#next"]', { timeout: 30000 });
   
   // Wait for the login response - using a more flexible URL pattern
